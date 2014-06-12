@@ -1,5 +1,5 @@
 <?
-// GHAPS - GitHub Auto-Pull Server
+// GHAPS - GitHub Auto-Publish Server
 //
 // Michael Ellis / Mike@MCECreations.com
 // 08.21.13 / Updated: 06.12.14
