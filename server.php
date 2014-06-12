@@ -11,8 +11,8 @@ $cmd_pull  = "git pull";
 $cmd_fpull = "git reset --hard origin";
 
 $repo_dirs = array("4604706"  => "/var/www/live/",
-				   "7172071"  => "/var/www/staging/",
-				   "13333000" => "/var/www/new/");
+		   "7172071"  => "/var/www/staging/",
+		   "13333000" => "/var/www/new/");
 
 $php_cmd   = "php";
 $sock_port = 8181;
