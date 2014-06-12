@@ -1,6 +1,8 @@
 <?
-// Lots of docs and changes coming soon!
-// 10.28.13
+// GHAPS - GitHub Auto-Pull Server
+//
+// Michael Ellis / Mike@MCECreations.com
+// 08.21.13 / Updated: 06.12.14
 
 chdir(dirname($_SERVER['PHP_SELF']));
 
@@ -8,8 +10,9 @@ $cmd_prior = "git fetch --all";
 $cmd_pull  = "git pull";
 $cmd_fpull = "git reset --hard origin";
 
-$repo_dirs = array("4604706" => "/var/www/live/",
-				   "7172071" => "/var/www/staging/");
+$repo_dirs = array("4604706"  => "/var/www/live/",
+				   "7172071"  => "/var/www/staging/",
+				   "13333000" => "/var/www/new/");
 
 $php_cmd   = "php";
 $sock_port = 8181;
@@ -23,8 +26,8 @@ $cmd_prior  .= " 2>&1";
 $cmd_pull   .= " 2>&1";
 $cmd_fpull  .= " 2>&1";
 
-
-$server_name = "GHAPS";
+$server_ver  = '1.2';
+$server_name = "GHAPS v{$server_ver}";
 $dest_file   = "server_run.php";
 $filename    = $_SERVER['SCRIPT_FILENAME'];
 
