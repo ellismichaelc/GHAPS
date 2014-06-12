@@ -24,8 +24,12 @@ $cmd_pull   .= " 2>&1";
 $cmd_fpull  .= " 2>&1";
 
 
-$dest_file = "server_run.php";
-$filename  = $_SERVER['SCRIPT_FILENAME'];
+$server_name = "GHAPS";
+$dest_file   = "server_run.php";
+$filename    = $_SERVER['SCRIPT_FILENAME'];
+
+$spacer_char = "#";
+$spacer      = "\n" . str_repeat($spacer_char) . "\n";
 
 if($filename !== $dest_file) {
 	while(true) {
@@ -99,9 +103,8 @@ while($sock) {
 			echo " * Sending client response .. ";
 			
 			$output  = "HTTP/1.0 403 Forbidden\r\n";
-			$output .= "Server: Apache\r\n";
-			$output .= "X-Powered-By: PHP/5.3.14\r\n";
-			$output .= "Expires: Thu, 19 Nov 1981 08:52:00 GMT\r\n";
+			$output .= "Server: {$server_name}\r\n";
+			$output .= "Expires: Jan 1 1981 12:00:00 GMT\r\n";
 			$output .= "Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0\r\n";
 			$output .= "Pragma: no-cache\r\n";
 			$output .= "Connection: Close\r\n";
@@ -145,13 +148,12 @@ while($sock) {
 				echo " * Sending client response .. ";
 				
 				$output  = "HTTP/1.1 200 OK\r\n";
-				$output .= "Server: Apache\r\n";
-				$output .= "X-Powered-By: PHP/5.3.14\r\n";
-				$output .= "Expires: Thu, 19 Nov 1981 08:52:00 GMT\r\n";
+				$output .= "Server: {$server_name}\r\n";
+				$output .= "Expires: Jan 1 1981 12:00:00 GMT\r\n";
 				$output .= "Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0\r\n";
 				$output .= "Pragma: no-cache\r\n";
 				$output .= "Connection: Close\r\n";
-				$output .= "Content-Type: text/html\r\n\r\n1";
+				$output .= "Content-Type: text/html\r\n\r\n";
 	            $send    = socket_write($client, $output);
 	            
 	            if($send) echo "Sent $send bytes.\n";
@@ -203,24 +205,22 @@ while($sock) {
 // Just to be safe
 @socket_close($sock);
  
-function addressInRange($IP) {
+
+function addressInRange($ip_to_check) {
 	global $ip_list;
-	$range = $ip_list;
 	
-	foreach($range as $CIDR) {
-		if(!strstr($CIDR, "/")) {
-			if($IP == $CIDR) return true;
+	foreach($ip_list as $ip) {
+		if(!strstr($ip, "/")) {
+			if($ip_to_check == $ip) return true;
 		} else {
-			list ($net, $mask) = split ("/", $CIDR);
+			list ($ip, $mask) = split ("/", $ip);
 			
-			$ip_net = ip2long ($net);
+			$ip      = ip2long($ip_to_check);
+			$ip_net  = ip2long($ip);
 			$ip_mask = ~((1 << (32 - $mask)) - 1);
+			$net     = $ip & $ip_mask;
 			
-			$ip_ip = ip2long ($IP);
-			
-			$ip_ip_net = $ip_ip & $ip_mask;
-			
-			if(($ip_ip_net == $ip_net)) return true;
+			if(($net == $ip_net)) return true;
 		}
 	}
 }
@@ -271,7 +271,7 @@ function handleRequest($client_ip, $request) {
 			echo trim(shell_exec($cmd_fpull));	
 		}
 		
-		echo "\n#########################################\n\n";
+		echo $spacer . "\n";
 	}
 }
 ?>
