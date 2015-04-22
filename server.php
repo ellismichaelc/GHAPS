@@ -2,37 +2,39 @@
 // GHAPS - GitHub Auto-Publish Server
 //
 // Michael Ellis / Mike@MCECreations.com
-// 08.21.13 / Updated: 06.12.14
+// 08.21.13 / Updated: 04.22.15
 
-chdir(dirname($_SERVER['PHP_SELF']));
+chdir(dirname(__FILE__));
+
+$error_log = "/var/log/ghaps.log";
 
 $cmd_prior = "git fetch --all";
 $cmd_pull  = "git pull";
 $cmd_fpull = "git reset --hard origin";
 
-$repo_dirs = array("4604706"  => "/var/www/live/",
-		   "7172071"  => "/var/www/staging/",
-		   "13333000" => "/var/www/new/");
-
-$php_cmd   = "php";
+$repo_dirs = array("mysite"         => "/var/www/live/",
+				   "mystagingsite"  => "/var/www/staging/");
+				   
+$php_cmd   = "php -q";
 $sock_port = 8181;
 $ip_list   = array("127.0.0.1",
 			       "24.233.176.168",
 				   "204.232.175.64/27",
 				   "192.30.252.0/22"); 
 
+
 // END CONFIG //
 $cmd_prior  .= " 2>&1";
 $cmd_pull   .= " 2>&1";
 $cmd_fpull  .= " 2>&1";
 
-$server_ver  = '1.2';
+$server_ver  = '1.3';
 $server_name = "GHAPS v{$server_ver}";
 $dest_file   = "server_run.php";
 $filename    = $_SERVER['SCRIPT_FILENAME'];
 
 $spacer_char = "#";
-$spacer      = "\n" . str_repeat($spacer_char) . "\n";
+$spacer      = "\n" . str_repeat($spacer_char, 90) . "\n";
 
 if($filename !== $dest_file) {
 	while(true) {
@@ -140,6 +142,8 @@ while($sock) {
 					if($data_length == $content_length) break;
 				} elseif(strpos($data, "\r\n\r\n") !== false) break;
 			}
+			
+			_log("Received GitHub request: \n{$data}");
 	
 			// Grab request
 			preg_match("/(GET)|(POST) (.*?) HTTP.*/", $data, $matches);
@@ -169,16 +173,24 @@ while($sock) {
 	            $updated = strstr($payload, "server.php") ? true : false;
 	            $payload = json_decode($payload);
 	            
-	            $repo_id = $payload->repository->id;
+	            $repo_id = $payload->repository->name;
 	            
-	            echo " * Repository identified: $repo_id\n";
 	            
 	            if(isset($repo_dirs[$repo_id])) {
+		            
 	            	$new_dir = $repo_dirs[$repo_id];
 	            	
+	            	echo " * Repository identified: $repo_id\n";
 		            echo " * Changing directory to: " . $new_dir . "\n";
 		            
-		            chdir($new_dir);
+		            if(!@chdir($new_dir)) goto close_socket;
+		            
+	            } else {
+		            
+		            echo " * I have no folder location for: {$repo_id}, exiting!\n";
+		            
+		            goto close_socket; 
+		            
 	            }
 	            
 	            handleRequest($client_ip, 'pull');
@@ -191,6 +203,8 @@ while($sock) {
 	            echo " * Couldn't identify request! [FAILED]\n";
             }
 		}
+		
+		close_socket:
 		
 		// Close socket
 		socket_close($client);
@@ -207,6 +221,14 @@ while($sock) {
 
 // Just to be safe
 @socket_close($sock);
+
+function _log($string) {
+	
+	global $error_log;
+	
+	return error_log($string, 3, $error_log);
+	
+}
  
 
 function addressInRange($ip_to_check) {
@@ -216,20 +238,21 @@ function addressInRange($ip_to_check) {
 		if(!strstr($ip, "/")) {
 			if($ip_to_check == $ip) return true;
 		} else {
-			list ($ip, $mask) = split ("/", $ip);
+			list ($ip_addr, $mask) = explode ("/", $ip);
 			
-			$ip      = ip2long($ip_to_check);
-			$ip_net  = ip2long($ip);
+			$ip_addr  = ip2long($ip_addr);
+			$ip_chk   = ip2long($ip_to_check);
+
 			$ip_mask = ~((1 << (32 - $mask)) - 1);
-			$net     = $ip & $ip_mask;
+			$net     = $ip_chk & $ip_mask;
 			
-			if(($net == $ip_net)) return true;
+			if(($net == $ip_addr)) return true;
 		}
 	}
 }
 
 function handleRequest($client_ip, $request) {
-	global $sock, $cmd_pull, $cmd_fpull, $cmd_prior;
+	global $sock, $cmd_pull, $cmd_fpull, $cmd_prior, $spacer;
 	
 	if(empty($request)) return false;
 	
